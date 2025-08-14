@@ -22,10 +22,10 @@ FROM base AS api_server
 
 EXPOSE 8000
 
-CMD ["uvicorn", "api_server.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["poetry", "run", "uvicorn", "api_server.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 
 
 # ---- LOG WORKER STAGE ----
 FROM base AS log_worker
-CMD ["python", "src/log_worker/worker.py"]
+CMD ["poetry", "run", "python","-m", "log_worker.worker"]
