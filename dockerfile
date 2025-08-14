@@ -13,7 +13,7 @@ COPY . .
 COPY poetry.lock pyproject.toml ./
 
 RUN poetry config virtualenvs.create false && \
-    poetry install --no-interaction
+    poetry install --no-interaction --no-root
 
 
 
@@ -28,4 +28,4 @@ CMD ["uvicorn", "api_server.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 # ---- LOG WORKER STAGE ----
 FROM base AS log_worker
-CMD ["python", "log_worker/worker.py"]
+CMD ["python", "src/log_worker/worker.py"]
