@@ -16,13 +16,12 @@ services:
       -c default_statistics_target=100
       -c random_page_cost=1.1
       -c work_mem=8MB
-    ports:
-      - "${DB_PORT}:5432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
       interval: 10s
       timeout: 5s
       retries: 5
+
   pgbouncer:
     image: bitnami/pgbouncer:1.22.0
     ports:
@@ -55,6 +54,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
+
   redis:
     image: redis:7-alpine
     volumes:
@@ -68,6 +69,12 @@ services:
       --tcp-backlog 511
     sysctls:
       - net.core.somaxconn=511
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   migration:
     build:
       context: .
@@ -79,6 +86,7 @@ services:
     depends_on:
       pgbouncer:
         condition: service_healthy
+
   api_server:
     build:
       context: .
@@ -104,7 +112,13 @@ services:
       migration:
           condition: service_completed_successfully
       redis:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   log_worker:
     build:
@@ -131,7 +145,7 @@ services:
       migration:
           condition: service_completed_successfully
       redis:
-        condition: service_started
+        condition: service_healthy
 
   nginx_load_balancer:
     image: nginx:1.25-alpine
@@ -153,7 +167,8 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - api_server
+      api_server:
+        condition: service_healthy
 
 volumes:
   postgres_data:
