@@ -38,10 +38,7 @@ class Database:
             )
         self._engine = create_async_engine(
             db_url,
-            pool_size=pool_size,
-            max_overflow=max_overflow,
-            echo=False,
-            connect_args={"statement_cache_size": 0},
+            **engine_kwargs,
         )
         session_factory = sessionmaker(
             autocommit=False,
