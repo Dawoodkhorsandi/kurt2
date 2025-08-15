@@ -25,7 +25,7 @@ class Database:
             "connect_args": {"statement_cache_size": 0},
         }
 
-        if settings.use_pgbouncer:
+        if settings.use_pgbouncer == "true":
             logger.info("Using NullPool for database connections (PgBouncer mode).")
             engine_kwargs["poolclass"] = NullPool
             # NullPool does not use these arguments, so we remove them.

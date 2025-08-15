@@ -17,8 +17,8 @@ class Settings(BaseSettings):
         description="Maximum number of connections "
         "to allow in addition to the pool size.",
     )
-    use_pgbouncer: bool = Field(
-        False,
+    use_pgbouncer: str = Field(
+        "false",
         alias="DB_USE_PGBOUNCER",
         description="Set to true to use NullPool, recommended when using PgBouncer.",
     )
