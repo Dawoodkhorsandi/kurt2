@@ -1,5 +1,7 @@
 import json
+
 import redis.asyncio as redis
+
 from .abstract_message_queue import AbstractMessageQueue
 
 
@@ -12,10 +14,9 @@ class RedisMessageQueue(AbstractMessageQueue):
         await self.redis.rpush(self.queue_name, json.dumps(message))
 
     async def get_batch(self, batch_size: int) -> list[dict]:
-        pipe = self.redis.pipeline()
-        pipe.lrange(self.queue_name, 0, batch_size - 1)
-        pipe.ltrim(self.queue_name, batch_size, -1)
-        messages, _ = await pipe.execute()
+        messages = await self.redis.lpop(self.queue_name, count=batch_size)
+        if not messages:
+            return []
         return [json.loads(msg) for msg in messages]
 
     async def close(self):

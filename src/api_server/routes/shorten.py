@@ -1,16 +1,15 @@
+from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Request
 from starlette.responses import RedirectResponse
-from dependency_injector.wiring import inject, Provide
 
-from src.core.shorten.services.url_shorten_service import UrlShortenService
-from src.core.shorten.services.url_visits_service import UrlVisitsService
 from src.core.infrastructures.dependency_injection.app_container import AppContainer
 from src.core.shorten.schemas.shorten import (
     ShortenRequest,
     ShortenResponse,
     StatsResponse,
 )
-
+from src.core.shorten.services.url_shorten_service import UrlShortenService
+from src.core.shorten.services.url_visits_service import UrlVisitsService
 
 router = APIRouter()
 
@@ -23,8 +22,7 @@ async def shorten_url(
         Provide[AppContainer.url_shorten_service]
     ),
 ):
-    created_url = await url_shorten_service.create_short_url(str(request.url))
-    return {"short_code": created_url.short_code}
+    return await url_shorten_service.create_short_url(str(request.url))
 
 
 @router.get("/{short_code}")
@@ -41,7 +39,7 @@ async def redirect_to_long_url(
         ip_address=request.client.host,
         user_agent=request.headers.get("user-agent"),
     )
-    return RedirectResponse(url=long_url)
+    return RedirectResponse(url=long_url.original_url)
 
 
 @router.get("/stats/{short_code}", response_model=StatsResponse)

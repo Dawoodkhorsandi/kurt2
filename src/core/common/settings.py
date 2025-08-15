@@ -1,6 +1,6 @@
 from os import path
 
-from pydantic import PostgresDsn, Field, model_validator
+from pydantic import Field, PostgresDsn, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -8,6 +8,14 @@ class Settings(BaseSettings):
     log_level: str = Field("DEBUG", description="Logging level for the application.")
     application_name: str = Field(
         "Kurt", description="Name of application used in logs."
+    )
+    db_pool_size: int = Field(
+        5, description="Number of connections to keep open in the connection pool."
+    )
+    db_max_overflow: int = Field(
+        10,
+        description="Maximum number of connections "
+        "to allow in addition to the pool size.",
     )
     postgres_dsn: PostgresDsn
     cache_type: str = Field(

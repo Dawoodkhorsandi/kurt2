@@ -1,6 +1,7 @@
-from sqlalchemy import select, update, case
+from typing import Dict, List
+
+from sqlalchemy import case, select, update
 from sqlalchemy.orm import joinedload
-from typing import Dict
 
 from src.core.common.base_repository import BaseRepository
 from src.core.shorten.entities.urls import URL
@@ -34,6 +35,14 @@ class UrlRepository(BaseRepository[URL]):
             .values(visit_count=self.model.visit_count + 1)
         )
         await self.session.execute(query)
+
+    async def get_by_short_codes(self, short_codes: List[str]) -> List[URL]:
+        if not short_codes:
+            return []
+        statement = select(self.model).where(self.model.short_code.in_(short_codes))
+        result = await self.session.execute(statement)
+
+        return result.scalars().all()
 
     async def bulk_increment_visit_counts(self, counts: Dict[str, int]) -> None:
         """

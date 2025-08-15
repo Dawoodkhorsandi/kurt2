@@ -4,7 +4,7 @@ from src.core.common.settings import Settings
 from src.core.infrastructures.cache.abstract_cache_storage import AbstractCacheStorage
 from src.core.infrastructures.cache.inmemory_cache import InMemoryCacheStorage
 from src.core.infrastructures.cache.redis_cache import RedisCacheStorage
-from src.core.infrastructures.database.database import Database, AsyncSession
+from src.core.infrastructures.database.database import AsyncSession, Database
 from src.core.infrastructures.message_queue.abstract_message_queue import (
     AbstractMessageQueue,
 )
@@ -14,14 +14,14 @@ from src.core.shorten.entities.urls import URL
 from src.core.shorten.entities.visits import Visit
 from src.core.shorten.repositories.url_repository import UrlRepository
 from src.core.shorten.repositories.visits_repository import VisitsRepository
+from src.core.shorten.services.url_shorten_service import UrlShortenService
+from src.core.shorten.services.url_visits_service import UrlVisitsService
 from src.core.shorten.utils.shorten_strategy.abstract_shorten_strategy import (
     ShortCodeStrategy,
 )
 from src.core.shorten.utils.shorten_strategy.base_62_shorten_stategy import (
     Base62ShortCodeStrategy,
 )
-from src.core.shorten.services.url_shorten_service import UrlShortenService
-from src.core.shorten.services.url_visits_service import UrlVisitsService
 
 
 class AppContainer(containers.DeclarativeContainer):
@@ -33,6 +33,8 @@ class AppContainer(containers.DeclarativeContainer):
     database: providers.Singleton[Database] = providers.Singleton(
         Database,
         db_url=db_url_provider,
+        pool_size=settings.provided.db_pool_size,
+        max_overflow=settings.provided.db_max_overflow,
     )
     db_session: providers.Factory[AsyncSession] = providers.Factory(
         lambda db: db.get_session(),

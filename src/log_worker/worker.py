@@ -6,14 +6,14 @@ from typing import List
 from pydantic import ValidationError
 
 from src.core.infrastructures.dependency_injection.app_container import AppContainer
+from src.core.infrastructures.logging import setup_logging
 from src.core.infrastructures.message_queue.abstract_message_queue import (
     AbstractMessageQueue,
 )
-from src.core.shorten.entities.messages import VisitLogMessage
 from src.core.shorten.entities.visits import Visit
 from src.core.shorten.repositories.url_repository import UrlRepository
 from src.core.shorten.repositories.visits_repository import VisitsRepository
-from src.core.infrastructures.logging import setup_logging
+from src.core.shorten.schemas.messages import VisitLogMessage
 
 BATCH_SIZE = 100
 SLEEP_INTERVAL = 1  # In seconds
@@ -33,20 +33,25 @@ class LogWorker:
         self.visits_repository = visits_repository
 
     async def process_messages(self, messages: List[VisitLogMessage]):
+        """
+        Processes a batch of visit messages efficiently using bulk operations.
+        """
         if not messages:
             return
 
         logger.info(f"Processing a batch of {len(messages)} messages.")
 
-        visits_to_add = [Visit(**message.model_dump()) for message in messages]
-
-        await self.visits_repository.add_all(visits_to_add)
+        visits_to_add = [
+            Visit(url_id=msg.url_id, visitor_ip=msg.ip_address) for msg in messages
+        ]
 
         visit_counts = Counter(msg.short_code for msg in messages)
 
+        await self.visits_repository.add_all(visits_to_add)
         await self.url_repository.bulk_increment_visit_counts(visit_counts)
 
         await self.visits_repository.session.commit()
+        logger.info(f"Successfully processed {len(visits_to_add)} visits.")
 
     async def run(self):
         logger.info("Log worker started.")
@@ -62,7 +67,6 @@ class LogWorker:
                     logger.debug("Queue is empty, sleeping...")
                     await asyncio.sleep(SLEEP_INTERVAL)
                     continue
-
                 valid_messages: List[VisitLogMessage] = []
 
                 for msg_data in raw_messages:

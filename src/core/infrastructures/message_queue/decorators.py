@@ -1,7 +1,8 @@
 import asyncio
-from functools import wraps
-from src.core.shorten.entities.messages import VisitLogMessage
 import logging
+from functools import wraps
+
+from src.core.shorten.schemas.messages import VisitLogMessage
 
 logger = logging.getLogger(__name__)
 
@@ -20,16 +21,19 @@ def log_visit(func):
         ip_address = kwargs.get("ip_address")
         user_agent = kwargs.get("user_agent")
 
-        original_url = await func(self, *args, **kwargs)
-        if original_url:
+        url = await func(self, *args, **kwargs)
+        if url:
             visit_message = VisitLogMessage(
+                url_id=url.id,
+                original_url=url.original_url,
                 short_code=short_code,
                 ip_address=ip_address,
                 user_agent=user_agent,
             )
-            logger.debug("Push task on queue", extra={**visit_message.dict()})
-            asyncio.create_task(message_queue.publish(visit_message.model_dump_json()))
+            log_data = visit_message.model_dump()
+            logger.debug("Push task on queue", extra=log_data)
+            asyncio.create_task(message_queue.publish(log_data))
 
-        return original_url
+        return url
 
     return wrapper

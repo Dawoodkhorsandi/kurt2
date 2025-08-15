@@ -7,6 +7,7 @@ class ShortenRequest(BaseModel):
 
 class ShortenResponse(BaseModel):
     short_code: str
+    original_url: str
 
 
 class StatsResponse(BaseModel):

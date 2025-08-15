@@ -2,20 +2,21 @@ import asyncio
 import logging
 
 from sqlalchemy.ext.asyncio import (
-    create_async_engine,
     AsyncSession,
     async_scoped_session,
+    create_async_engine,
 )
-from sqlalchemy.orm import sessionmaker, declarative_base
-
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 logger = logging.getLogger(__name__)
 Base = declarative_base()
 
 
 class Database:
-    def __init__(self, db_url: str):
-        self._engine = create_async_engine(db_url, echo=False)
+    def __init__(self, db_url: str, pool_size: int = 5, max_overflow: int = 10):
+        self._engine = create_async_engine(
+            db_url, pool_size=pool_size, max_overflow=max_overflow, echo=False
+        )
         session_factory = sessionmaker(
             autocommit=False,
             autoflush=False,
