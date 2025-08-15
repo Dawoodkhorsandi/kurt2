@@ -23,7 +23,7 @@ FROM base AS api_server
 
 EXPOSE 8000
 
-CMD ["poetry", "run", "uvicorn", "api_server.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["gunicorn", "src.api_server.app:app", "--workers", "4", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
 
 
 

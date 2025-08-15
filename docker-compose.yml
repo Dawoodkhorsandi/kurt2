@@ -7,22 +7,86 @@ services:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
+    command: >
+      -c max_connections=110
+      -c shared_buffers=256MB
+      -c effective_cache_size=768MB
+      -c maintenance_work_mem=64MB
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c work_mem=8MB
     ports:
       - "${DB_PORT}:5432"
+  pgbouncer:
+    image: bitnami/pgbouncer:1.22
+    ports:
+      - "6432:6432"
+    environment:
+      - POSTGRESQL_HOST=db
+      - POSTGRESQL_PORT=5432
+      - POSTGRESQL_USERNAME=${DB_USER}
+      - POSTGRESQL_PASSWORD=${DB_PASSWORD}
+      - PGBOUNCER_DATABASE=${DB_NAME}
+      - PGBOUNCER_POOL_MODE=transaction
+      - PGBOUNCER_MAX_CLIENT_CONN=1000
+      - PGBOUNCER_DEFAULT_POOL_SIZE=100
+      - PGBOUNCER_AUTH_TYPE=md5
+    depends_on:
+      db:
+        condition: service_healthy
+    deploy:
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 128M
+        reservations:
+          cpus: '0.25'
+          memory: 64M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -p 6432 -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   redis:
     image: redis:7-alpine
-
+    volumes:
+      - redis_data:/data
+    command: >
+      --save ""
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --tcp-backlog 511
+    sysctls:
+      - net.core.somaxconn=511
+      - vm.overcommit_memory=1
   api_server:
     build:
       context: .
       dockerfile: Dockerfile
       target: api_server
     deploy:
-      replicas: 3
+      replicas: 5
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
     env_file:
       - .env
     depends_on:
-      - db
+      - pgbouncer
       - redis
 
   log_worker:
@@ -31,15 +95,40 @@ services:
       dockerfile: Dockerfile
       target: log_worker
     deploy:
-      replicas: 2
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
     env_file:
       - .env
     depends_on:
-      - db
+      - pgbouncer
       - redis
 
   nginx_load_balancer:
     image: nginx:1.25-alpine
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 180M
+        reservations:
+          cpus: '0.3'
+          memory: 80M
     ports:
       - "80:80"
     volumes:
