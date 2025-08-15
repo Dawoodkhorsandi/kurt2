@@ -4,7 +4,8 @@ from fastapi import FastAPI
 
 from src.api_server.routes import shorten
 from src.core.infrastructures.logging import setup_logging
-from src.core.infrastructures.dependency_injection.appcontainer import AppContainer
+from src.core.infrastructures.dependency_injection.app_container import AppContainer
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -16,6 +17,7 @@ async def lifespan(app: FastAPI):
     )
     yield
     app.container.unwire()
+
 
 def create_app() -> FastAPI:
 

@@ -5,6 +5,7 @@ class AbstractMessageQueue(ABC):
     """
     An abstract base class defining the interface for a message queue client.
     """
+
     @abstractmethod
     async def publish(self, message: dict):
         """Publishes a message to the queue."""

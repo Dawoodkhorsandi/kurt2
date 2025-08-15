@@ -4,20 +4,38 @@ from dependency_injector.wiring import inject, Provide
 
 from src.core.shorten.services.url_shorten_service import UrlShortenService
 from src.core.shorten.services.url_visits_service import UrlVisitsService
-from src.core.infrastructures.dependency_injection.appcontainer import AppContainer
+from src.core.infrastructures.dependency_injection.app_container import AppContainer
+from src.core.shorten.schemas.shorten import (
+    ShortenRequest,
+    ShortenResponse,
+    StatsResponse,
+)
+
 
 router = APIRouter()
-container = AppContainer()
 
-@router.post("/shorten")
+
+@router.post("/shorten", response_model=ShortenResponse)
 @inject
-def shorten_url(url: str, url_shorten_service: UrlShortenService = Depends(Provide[AppContainer.url_shorten_service])):
-    short_code = url_shorten_service.create_short_url(url)
-    return {"short_code": short_code}
+async def shorten_url(
+    request: ShortenRequest,
+    url_shorten_service: UrlShortenService = Depends(
+        Provide[AppContainer.url_shorten_service]
+    ),
+):
+    created_url = await url_shorten_service.create_short_url(str(request.url))
+    return {"short_code": created_url.short_code}
+
 
 @router.get("/{short_code}")
 @inject
-async def redirect_to_long_url(short_code: str, request: Request, url_visits_service: UrlVisitsService = Depends(Provide[AppContainer.url_visits_service])):
+async def redirect_to_long_url(
+    short_code: str,
+    request: Request,
+    url_visits_service: UrlVisitsService = Depends(
+        Provide[AppContainer.url_visits_service]
+    ),
+):
     long_url = await url_visits_service.get_original_url(
         short_code=short_code,
         ip_address=request.client.host,
@@ -25,8 +43,14 @@ async def redirect_to_long_url(short_code: str, request: Request, url_visits_ser
     )
     return RedirectResponse(url=long_url)
 
-@router.get("/stats/{short_code}")
+
+@router.get("/stats/{short_code}", response_model=StatsResponse)
 @inject
-async def get_url_stats(short_code: str, url_visits_service: UrlVisitsService = Depends(Provide[AppContainer.url_visits_service])):
-    visits = await url_visits_service.get_url_stats(short_code)
-    return {"visits": visits}
+async def get_url_stats(
+    short_code: str,
+    url_visits_service: UrlVisitsService = Depends(
+        Provide[AppContainer.url_visits_service]
+    ),
+):
+    visits_count = await url_visits_service.get_url_stats(short_code)
+    return {"visits": visits_count}

@@ -8,10 +8,15 @@ from src.core.shorten.entities.urls import URL
 
 class UrlRepository(BaseRepository[URL]):
     async def get_by_short_code(self, short_code: str) -> URL | None:
-        return await self.get_one_or_none(key="short_code", value=short_code)
+        return await self.get_one_or_none(short_code=short_code)
 
     async def get_by_original_url(self, original_url: str) -> URL | None:
-        return await self.get_one_or_none(key="original_url", value=original_url)
+        return await self.get_one_or_none(original_url=original_url)
+
+    async def get_one_or_none(self, **filter_by) -> URL | None:
+        statement = select(self.model).filter_by(**filter_by)
+        result = await self.session.execute(statement)
+        return result.scalar_one_or_none()
 
     async def get_with_visits_by_short_code(self, short_code: str) -> URL | None:
         query = (
@@ -23,7 +28,6 @@ class UrlRepository(BaseRepository[URL]):
         return result.scalars().one_or_none()
 
     async def increment_visit_count(self, short_code: str) -> None:
-        """Atomically increments the visit_count for a given short_code."""
         query = (
             update(self.model)
             .where(self.model.short_code == short_code)

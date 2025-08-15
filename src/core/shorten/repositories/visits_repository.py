@@ -11,5 +11,4 @@ class VisitsRepository(BaseRepository[Visit]):
         return result.scalar_one()
 
     async def add_all(self, visits: list[Visit]) -> None:
-        """Adds a batch of visit records to the database."""
         self.session.add_all(visits)

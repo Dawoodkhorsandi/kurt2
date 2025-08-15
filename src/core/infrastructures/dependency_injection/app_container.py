@@ -14,8 +14,12 @@ from src.core.shorten.entities.urls import URL
 from src.core.shorten.entities.visits import Visit
 from src.core.shorten.repositories.url_repository import UrlRepository
 from src.core.shorten.repositories.visits_repository import VisitsRepository
-from src.core.shorten.utils.shorten_strategy.abstract_shorten_strategy import ShortCodeStrategy
-from src.core.shorten.utils.shorten_strategy.base_62_shorten_stategy import Base62ShortCodeStrategy
+from src.core.shorten.utils.shorten_strategy.abstract_shorten_strategy import (
+    ShortCodeStrategy,
+)
+from src.core.shorten.utils.shorten_strategy.base_62_shorten_stategy import (
+    Base62ShortCodeStrategy,
+)
 from src.core.shorten.services.url_shorten_service import UrlShortenService
 from src.core.shorten.services.url_visits_service import UrlVisitsService
 
@@ -23,7 +27,7 @@ from src.core.shorten.services.url_visits_service import UrlVisitsService
 class AppContainer(containers.DeclarativeContainer):
     settings: providers.Singleton[Settings] = providers.Singleton(Settings)
     db_url_provider: providers.Provider[str] = providers.Factory(
-        lambda s: str(s.postgres_dsn),
+        lambda s: s.get("postgres_dsn") if isinstance(s, dict) else str(s.postgres_dsn),
         s=settings,
     )
     database: providers.Singleton[Database] = providers.Singleton(
@@ -43,7 +47,7 @@ class AppContainer(containers.DeclarativeContainer):
     cache_storage: providers.Selector[AbstractCacheStorage] = providers.Selector(
         settings.provided.cache_type,
         redis=redis_cache,
-        **{"in-memory": in_memory_cache}
+        **{"in-memory": in_memory_cache},
     )
 
     redis_message_queue = providers.Singleton(
@@ -53,7 +57,7 @@ class AppContainer(containers.DeclarativeContainer):
     message_queue: providers.Selector[AbstractMessageQueue] = providers.Selector(
         settings.provided.message_queue_type,
         redis=redis_message_queue,
-        **{"in-memory": in_memory_message_queue}
+        **{"in-memory": in_memory_message_queue},
     )
 
     url_repository = providers.Factory(UrlRepository, model=URL, session=db_session)

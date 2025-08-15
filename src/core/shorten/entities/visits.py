@@ -8,7 +8,7 @@ from sqlalchemy import BigInteger
 class Visit(SQLModel, table=True):
     id: Optional[int] = Field(
         default=None,
-        sa_column=Column(BigInteger, autoincrement=True, primary_key=True, unique=True, index=True),
+        sa_column=Column(BigInteger, autoincrement=True, primary_key=True),
     )
     visitor_ip: str = Field(max_length=45)
 

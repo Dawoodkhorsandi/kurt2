@@ -21,9 +21,11 @@ class UrlVisitsService:
     @log_visit
     @cache
     async def get_original_url(
-        self, short_code: str, ip_address: str | None = None, user_agent: str | None = None
+        self,
+        short_code: str,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
     ) -> str:
-        """Retrieves the original URL for a given short code, using a cache and logging the visit."""
         url = await self.url_repository.get_by_short_code(short_code=short_code)
         if not url:
             raise NotFoundException("Short code not found.")
@@ -31,9 +33,9 @@ class UrlVisitsService:
         return url.original_url
 
     async def get_url_stats(self, short_code: str) -> int:
-        url = await self.url_repository.get_with_visits_by_short_code(
-            short_code=short_code
-        )
+
+        url = await self.url_repository.get_by_short_code(short_code=short_code)
         if not url:
             raise NotFoundException("Short code not found.")
-        return len(url.visits)
+
+        return url.visit_count

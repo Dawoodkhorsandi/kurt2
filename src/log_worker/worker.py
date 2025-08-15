@@ -5,16 +5,18 @@ from typing import List
 
 from pydantic import ValidationError
 
-from src.core.infrastructures.dependency_injection.appcontainer import AppContainer
+from src.core.infrastructures.dependency_injection.app_container import AppContainer
 from src.core.infrastructures.logging import setup_logging
-from src.core.infrastructures.message_queue.abstract_message_queue import AbstractMessageQueue
+from src.core.infrastructures.message_queue.abstract_message_queue import (
+    AbstractMessageQueue,
+)
 from src.core.shorten.entities.messages import VisitLogMessage
 from src.core.shorten.entities.visits import Visit
 from src.core.shorten.repositories.url_repository import UrlRepository
 from src.core.shorten.repositories.visits_repository import VisitsRepository
 
 BATCH_SIZE = 100
-SLEEP_INTERVAL = 1 # In seconds
+SLEEP_INTERVAL = 1  # In seconds
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +50,9 @@ class LogWorker:
 
     async def run(self):
         logger.info("Log worker started.")
-        logger.info(f"Using message queue type: {self.message_queue.__class__.__name__}")
+        logger.info(
+            f"Using message queue type: {self.message_queue.__class__.__name__}"
+        )
 
         while True:
             try:
@@ -65,7 +69,9 @@ class LogWorker:
                     try:
                         valid_messages.append(VisitLogMessage.model_validate(msg_data))
                     except ValidationError as e:
-                        logger.warning(f"Skipping malformed message. Data: {msg_data}. Error: {e}")
+                        logger.warning(
+                            f"Skipping malformed message. Data: {msg_data}. Error: {e}"
+                        )
 
                 if valid_messages:
                     await self.process_messages(valid_messages)

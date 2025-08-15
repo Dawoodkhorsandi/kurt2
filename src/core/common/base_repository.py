@@ -1,13 +1,10 @@
 from typing import Any, Generic, Type, TypeVar
 
-from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import SQLModel
 
-from src.core.infrastructures.database.database import Base
-
-
-ModelType = TypeVar("ModelType", bound=Base)
+ModelType = TypeVar("ModelType", bound=SQLModel)
 
 
 class BaseRepository(Generic[ModelType]):
@@ -25,12 +22,10 @@ class BaseRepository(Generic[ModelType]):
         return result.scalar_one_or_none()
 
     async def create(self, *, obj_in: ModelType) -> ModelType:
-        obj_in_data = obj_in.model_dump()
-        db_obj = self.model(**obj_in_data)
-        self.session.add(db_obj)
+        self.session.add(obj_in)
         await self.session.commit()
-        await self.session.refresh(db_obj)
-        return db_obj
+        await self.session.refresh(obj_in)
+        return obj_in
 
     async def update(self, *, db_obj: ModelType, obj_in: ModelType) -> ModelType:
         update_data = obj_in.model_dump(exclude_unset=True)

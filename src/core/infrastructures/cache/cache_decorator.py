@@ -4,7 +4,9 @@ from typing import Any, Callable, Optional
 from .abstract_cache_storage import AbstractCacheStorage
 
 
-def cache(cache_storage: AbstractCacheStorage, prefix: str, expire: Optional[int] = None):
+def cache(
+    cache_storage: AbstractCacheStorage, prefix: str, expire: Optional[int] = None
+):
     def decorator(func: Callable[..., Any]):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):

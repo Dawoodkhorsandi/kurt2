@@ -2,6 +2,7 @@ import string
 
 from .abstract_shorten_strategy import ShortCodeStrategy
 
+
 class Base62ShortCodeStrategy(ShortCodeStrategy):
     def __init__(self):
         self.characters = string.digits + string.ascii_letters  # 0-9a-zA-Z
