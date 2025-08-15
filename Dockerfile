@@ -1,21 +1,20 @@
-# ---- BASE STAGE ----
-FROM python:3.11-slim AS base
+FROM python:3.11.9-slim AS base
 
-ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
-ENV PYTHONPATH=/app/src
 
 WORKDIR /app
-
+ENV PYTHONPATH=/app/src
 RUN pip install --no-cache-dir poetry==2.1.4
-
-COPY . .
 
 COPY poetry.lock pyproject.toml ./
 
-RUN poetry config virtualenvs.create false && \
+RUN apt-get update && \
+    apt-get install -y curl && \
+    poetry config virtualenvs.create false && \
     poetry install --no-interaction --no-root
 
+
+COPY . .
 
 
 # ---- API SERVER STAGE ----
@@ -23,10 +22,10 @@ FROM base AS api_server
 
 EXPOSE 8000
 
-CMD ["poetry", "run", "uvicorn", "api_server.app:app", "--host", "0.0.0.0", "--port", "8000"]
-
+CMD ["poetry", "run", "gunicorn", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "src.api_server.app:app"]
 
 
 # ---- LOG WORKER STAGE ----
 FROM base AS log_worker
-CMD ["poetry", "run", "python","-m", "log_worker.worker"]
+
+CMD ["poetry", "run", "python", "-m", "src.log_worker.worker"]

@@ -1,6 +1,6 @@
-import sys
-import os
 import asyncio
+import os
+import sys
 
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
@@ -22,8 +22,9 @@ setup_logging()
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from src.core.common.settings import Settings
 from sqlmodel import SQLModel
+
+from src.core.common.settings import Settings
 
 settings = Settings()
 
@@ -71,11 +72,13 @@ async def run_async_migrations() -> None:
     and associate a connection with the context.
 
     """
+    connect_args = {"statement_cache_size": 0}
     config.set_main_option("sqlalchemy.url", str(settings.postgres_dsn))
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=connect_args,
     )
 
     async with connectable.connect() as connection:
