@@ -1,4 +1,5 @@
-from fastapi import HTTPException as FastAPIHttpException, status
+from fastapi import HTTPException as FastAPIHttpException
+from fastapi import status
 
 
 class HTTPException(FastAPIHttpException):
@@ -23,3 +24,8 @@ class UnauthorizedException(HTTPException):
 class ConflictException(HTTPException):
     def __init__(self, message: str = "Conflict Exception"):
         super().__init__(status_code=status.HTTP_409_CONFLICT, detail=message)
+
+
+class ShortCodeAlreadyExistsError(ConflictException):
+    def __init__(self, message: str = "Short code already exists"):
+        super().__init__(message=message)

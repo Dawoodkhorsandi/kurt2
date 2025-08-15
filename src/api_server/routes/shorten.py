@@ -22,7 +22,10 @@ async def shorten_url(
         Provide[AppContainer.url_shorten_service]
     ),
 ):
-    return await url_shorten_service.create_short_url(str(request.url))
+    return await url_shorten_service.create_short_url(
+        original_url=str(request.url),
+        custom_code=request.custom_code,
+    )
 
 
 @router.get("/{short_code}")
