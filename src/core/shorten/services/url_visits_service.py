@@ -3,7 +3,8 @@ from src.core.infrastructures.cache.abstract_cache_storage import AbstractCacheS
 from src.core.infrastructures.message_queue.abstract_message_queue import (
     AbstractMessageQueue,
 )
-from src.core.infrastructures.message_queue.decorators import cache, log_visit
+from src.core.infrastructures.message_queue.decorators import log_visit
+from src.core.infrastructures.cache.decorators import cache
 from src.core.shorten.repositories.url_repository import UrlRepository
 
 
@@ -33,7 +34,6 @@ class UrlVisitsService:
         return url.original_url
 
     async def get_url_stats(self, short_code: str) -> int:
-
         url = await self.url_repository.get_by_short_code(short_code=short_code)
         if not url:
             raise NotFoundException("Short code not found.")

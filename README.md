@@ -195,14 +195,25 @@ You can create a `systemd` service file to manage both the API server and the lo
 
 ## Code Style
 
-This project uses the **[black](https://github.com/psf/black)** code formatter to ensure a consistent code style. `black` is included as a development dependency, so it will be installed when you run `poetry install`.
+This project uses the **[Ruff](https://github.com/astral-sh/ruff)** as code formatter and linter to ensure a consistent code style. `ruff` is included as a development dependency, so it will be installed when you run `poetry install`.
 
-All contributions should be formatted with `black` before being submitted.
+All contributions should be formatted with `ruff` before being submitted.
+
+Also ruff is added to pre-commit hooks, So run
+```bash
+poetry run pre-commit install
+```
+To enable pre-commit hooks.
+
 
 ### Usage
 
 To format the entire project, run the following command from the root directory:
 
 ```bash
-poetry run black .
+poetry run ruff . --fix
+```
+or
+```bash
+poetry run pre-commit run --all-files
 ```

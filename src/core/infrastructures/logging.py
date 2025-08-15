@@ -11,7 +11,6 @@ settings = Settings()
 
 
 class CustomJsonFormatter(JsonFormatter):
-
     def add_fields(
         self, log_record: Dict, record: logging.LogRecord, message_dict: Dict
     ):
@@ -49,9 +48,7 @@ class CustomJsonFormatter(JsonFormatter):
             )
 
 
-
 def setup_logging():
-
     project_root = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "..", "..", "..")
     )
@@ -59,11 +56,7 @@ def setup_logging():
     logs_directory = os.path.join(project_root, "logs")
     os.makedirs(logs_directory, exist_ok=True)
 
-    defaults = {
-        "log_level": settings.log_level.upper(),
-        "log_dir": logs_directory
-
-    }
+    defaults = {"log_level": settings.log_level.upper(), "log_dir": logs_directory}
 
     conf_path = os.path.join(project_root, "logging.conf")
     if not os.path.exists(conf_path):

@@ -14,10 +14,12 @@ from src.core.shorten.entities.visits import Visit
 from src.core.shorten.repositories.url_repository import UrlRepository
 from src.core.shorten.repositories.visits_repository import VisitsRepository
 from src.core.infrastructures.logging import setup_logging
+
 BATCH_SIZE = 100
 SLEEP_INTERVAL = 1  # In seconds
 
-logger= logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+
 
 class LogWorker:
     def __init__(

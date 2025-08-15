@@ -14,7 +14,6 @@ Base = declarative_base()
 
 
 class Database:
-
     def __init__(self, db_url: str):
         self._engine = create_async_engine(db_url, echo=False)
         session_factory = sessionmaker(

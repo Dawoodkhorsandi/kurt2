@@ -20,7 +20,6 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
-
     container = AppContainer()
     app = FastAPI(
         title="Yet Another URL Shortener",

@@ -1,7 +1,6 @@
 import sys
 import os
 import asyncio
-from logging.config import fileConfig
 
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
@@ -17,16 +16,14 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 # This line sets up loggers basically.
 
 from src.core.infrastructures.logging import setup_logging
+
 setup_logging()
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from src.core.infrastructures.database.database import Base
 from src.core.common.settings import Settings
 from sqlmodel import SQLModel
-from src.core.shorten.entities.visits import Visit
-from src.core.shorten.entities.urls import URL
 
 settings = Settings()
 
