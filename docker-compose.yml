@@ -64,6 +64,17 @@ services:
     sysctls:
       - net.core.somaxconn=511
       - vm.overcommit_memory=1
+  migration:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api_server
+    command: [ "alembic", "upgrade", "head" ]
+    env_file:
+      - .env
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
   api_server:
     build:
       context: .
@@ -86,8 +97,10 @@ services:
     env_file:
       - .env
     depends_on:
-      - pgbouncer
-      - redis
+      migration:
+          condition: service_completed_successfully
+      redis:
+        condition: service_started
 
   log_worker:
     build:
@@ -111,8 +124,10 @@ services:
     env_file:
       - .env
     depends_on:
-      - pgbouncer
-      - redis
+      migration:
+          condition: service_completed_successfully
+      redis:
+        condition: service_started
 
   nginx_load_balancer:
     image: nginx:1.25-alpine
