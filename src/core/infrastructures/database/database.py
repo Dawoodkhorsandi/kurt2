@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import uuid
 
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -22,11 +23,18 @@ class Database:
             "pool_size": pool_size,
             "max_overflow": max_overflow,
             "echo": False,
-            "connect_args": {"statement_cache_size": 0},
         }
 
-        if settings.use_pgbouncer == "true":
+        if settings.use_pgbouncer:
             logger.info("Using NullPool for database connections (PgBouncer mode).")
+            engine_kwargs["connect_args"] = (
+                {
+                    "prepared_statement_name_func": lambda: f"__a\
+                    syncpg_{uuid.uuid4()}__",
+                    "statement_cache_size": 0,
+                    "prepared_statement_cache_size": 0,
+                },
+            )
             engine_kwargs["poolclass"] = NullPool
             # NullPool does not use these arguments, so we remove them.
             del engine_kwargs["pool_size"]
