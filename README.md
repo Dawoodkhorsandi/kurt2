@@ -1,219 +1,223 @@
-# Kurt - A Simple URL Shortener
+# Kurt2: A High-Performance URL Shortener
 
-Kurt (کوردی: کورت) means "Short" in Kurdish.
+A little history: "Kurt" means "short" in Kurdish. This project is the second version of a URL shortener originally written 5 years ago. You can see the first version [here](https://github.com/Dawoodkhorsandi/kurt).
 
-This project is a robust and scalable URL shortening service built with Python. It features a clean architecture, asynchronous task handling, and a decoupled design, making it efficient and maintainable.
+Kurt2 is a robust and scalable URL shortener system built with a modern, production-grade technology stack. It is designed for high performance and reliability, featuring a clean, decoupled architecture that is easy to maintain and extend.
 
-## Project History
+## Key Features
 
-This project, `kurt2`, is the second iteration of a URL shortener by the same author. The original version, **[kurt](https://github.com/Dawoodkhorsandi/kurt)**, was implemented about 5 years ago using Django. This new version is a complete rewrite, leveraging modern Python technologies like FastAPI and `asyncio` to build a more performant and scalable system from the ground up.
+*   **Scalable Architecture**: The system is designed to handle a high volume of traffic, with a load-balanced API server and a decoupled background worker for processing tasks.
+*   **High-Performance Stack**: Utilizes a powerful combination of technologies, including FastAPI, PostgreSQL, Redis, and NGINX, to deliver a fast and responsive user experience.
+*   **Asynchronous Task Processing**: A background worker processes non-critical tasks, such as logging URL visits, asynchronously. This ensures that the API server can respond to user requests as quickly as possible.
+*   **Database Connection Pooling**: Uses PgBouncer to efficiently manage database connections, which is crucial for handling a large number of concurrent users.
+*   **Clean, Decoupled Codebase**: The project follows the principles of clean architecture, with a clear separation of concerns between the API, business logic, and data layers. This makes the codebase easy to understand, test, and maintain.
 
----
+## Architecture Overview
 
-## Core Features
+The system is composed of several services that work together to provide a seamless user experience.
 
-- **Fast & Asynchronous**: Built with FastAPI and `asyncio` for high performance.
-- **Decoupled Logging**: URL visit logging is handled by a separate background worker, ensuring user-facing endpoints are as fast as possible.
-- **Pluggable Infrastructure**: Easily switch between Redis and in-memory implementations for caching and message queuing.
-- **Database Migrations**: Uses Alembic to manage database schema changes systematically.
-- **Structured Logging**: Centralized and configurable logging for easy debugging and monitoring.
-- **Modern Dependency Management**: Uses Poetry for clear and reliable dependency management.
+```
+      +-------------------+
+      |       User        |
+      +-------------------+
+              |
+              v
+      +-------------------+
+      |  NGINX Load Balancer |
+      +-------------------+
+              |
+              v
++---------------------------+      +---------------------------+
+|   FastAPI API Server (x5)   |      |   Log Worker (x3)         |
++---------------------------+      +---------------------------+
+       |           ^                      |
+       v           |                      v
++-------------------+      +-------------------+
+|   Redis Cache     |      |   Message Queue   |
++-------------------+      +-------------------+
+       |           |                      |
+       v           +----------------------+
++-------------------+
+|    PgBouncer      |
++-------------------+
+       |
+       v
++-------------------+
+|    PostgreSQL     |
++-------------------+
+```
 
----
+## Technologies Used
 
-## Project Structure
-
-- **/api_server**: Contains the FastAPI web application that handles user requests.
-- **/log_worker**: A separate application that consumes visit events from the message queue and updates the database.
-- **/src/core**: The core business logic, entities, and application services.
-    - **/infrastructures**: Contains implementations for external services like databases, caches, and message queues.
-    - **/shorten**: The primary domain logic for URL shortening and visit tracking.
-- **/alembic**: Houses the database migration scripts.
-
----
+*   **Backend**: FastAPI, Python 3.10
+*   **Database**: PostgreSQL, PgBouncer
+*   **Cache**: Redis
+*   **Message Queue**: Redis
+*   **Web Server**: NGINX, Uvicorn, Gunicorn
+*   **ORM**: SQLAlchemy, SQLModel
+*   **Dependency Injection**: `dependency-injector`
+*   **Migrations**: Alembic
+*   **Testing**: Pytest, `pytest-asyncio`
+*   **Linting/Formatting**: Ruff, pre-commit
 
 ## Getting Started
 
-### 1. Installation & Dependency Management
+This project is fully containerized and can be run with a single command.
 
-This project uses **[Poetry](https://python-poetry.org/)** to manage dependencies.
+### Prerequisites
+
+*   Docker
+*   Docker Compose
+
+### Installation
 
 1.  **Clone the repository:**
+
     ```bash
     git clone <repository-url>
     cd kurt2
     ```
 
-2.  **Install Poetry:**
-    Follow the official instructions at [python-poetry.org](https://python-poetry.org/docs/#installation) to install Poetry on your system.
+2.  **Create an environment file:**
 
-3.  **Install dependencies:**
-    Once Poetry is installed, run the following command from the project root. This will create a virtual environment and install all the required packages from the `pyproject.toml` and `poetry.lock` files.
+    Copy the example environment file and update it with your desired settings.
 
     ```bash
-    poetry install
+    cp .env.example .env
     ```
 
-### 2. Configuration
-
-The application is configured using environment variables. You can create a `.env` file in the project root to manage them.
-
-| Variable              | Description                                                                 | Default       | Required |
-| --------------------- | --------------------------------------------------------------------------- | ------------- | -------- |
-| `DATABASE_URL`        | The SQLAlchemy connection string for your database.                         | `None`        | **Yes**  |
-| `CACHE_TYPE`          | The type of cache to use. Can be `in-memory` or `redis`.                    | `in-memory`   | No       |
-| `MESSAGE_QUEUE_TYPE`  | The type of message queue to use. Can be `in-memory` or `redis`.            | `in-memory`   | No       |
-| `REDIS_DSN`           | The Data Source Name for Redis. Required if using Redis for cache or queue. | `None`        | **If Redis is used** |
-| `API_HOST`            | The host on which the API server will run.                                  | `0.0.0.0`     | No       |
-| `API_PORT`            | The port for the API server.                                                | `8000`        | No       |
-
-**Example `.env` file:**
-```
-DATABASE_URL="postgresql+asyncpg://user:password@db_host/kurt"
-CACHE_TYPE="redis"
-MESSAGE_QUEUE_TYPE="redis"
-REDIS_DSN="redis://localhost:6379/0"
-```
-
-### 3. Database Migrations
-
-The project uses Alembic to handle database schema migrations. Commands should be run using `poetry run` to execute them within the project's virtual environment.
-
-1.  **Generate a new migration:**
-    After making changes to the models in `src/core/shorten/entities/`, run the following command to automatically generate a migration script.
-
-    ```bash
-    poetry run alembic revision --autogenerate -m "Describe your model changes here"
-    ```
-
-2.  **Apply migrations:**
-    To apply all pending migrations and bring the database up to date, run:
-
-    ```bash
-    poetry run alembic upgrade head
-    ```
-
----
-
-## Running the Application
-
-### Running with Docker (Recommended)
-
-The easiest way to get the entire application stack running is by using the provided Docker Compose file. This will start the API server, the log worker, a PostgreSQL database, and a Redis instance.
-
-1.  **Create a `.env` file:**
-    Make sure you have a `.env` file in the project root with your desired configuration (see the Configuration section above). The `docker-compose.yml` file is set up to pass these environment variables to the application containers.
-
-2.  **Build and run the containers:**
+3.  **Build and run the services:**
 
     ```bash
     docker-compose up --build
     ```
 
-    This command will build the Docker images and start all the services. The API server will be available at `http://localhost:8000`.
+This will start all the services, including the API server, the background worker, the database, and the cache. The API will be accessible at `http://localhost:80`.
 
-3.  **Run migrations in Docker:**
-    Before the application can function correctly, you need to run the database migrations inside the running container.
+## Application Entrypoints
+The system is designed with two distinct entrypoints, allowing for a clear separation of concerns between handling user requests and processing background tasks.
 
+#### 1. API Server (`api_server`)
+*   **Purpose**: This is the main web application that handles all incoming HTTP requests from users. It's responsible for creating new short URLs and redirecting users from a short URL to the original long URL.
+*   **How it Works**: It's a FastAPI application run by Gunicorn and Uvicorn workers. The `docker-compose.yml` is configured to run multiple instances of the API server, and NGINX acts as a load balancer to distribute traffic among them.
+
+#### 2. Log Worker (`log_worker`)
+*   **Purpose**: This is a background worker that processes tasks asynchronously. Its primary job is to log URL visit information (like IP address and user agent) to the database.
+*   **How it Works**: When a user visits a short URL, the API server doesn't wait to write the visit data to the database. Instead, it publishes a message to a Redis message queue and immediately redirects the user. The `log_worker` listens for new messages on this queue, consumes them, and writes the data to the PostgreSQL database. This decoupling ensures the API remains fast and responsive.
+
+## Developer Guide
+
+### Running Tests
+The project uses `pytest` for testing. To run the test suite, execute the following command from the root of the project:
+```bash
+pytest
+```
+**Note**: For the tests to run correctly, you must create a `.env.test` file in the project root. This file should contain the configuration for a separate test database to ensure that the tests do not affect your development database. You can copy `.env.example` to `.env.test` and modify the database connection variables.
+
+### Linting and Formatting
+We use `Ruff` for linting and formatting and `pre-commit` to ensure code quality before committing.
+
+1.  **Install pre-commit hooks:**
     ```bash
-    docker-compose exec api-server alembic upgrade head
+    pre-commit install
     ```
 
-### Docker Compose Explained
+2.  **Run checks manually:**
+    To run all pre-commit hooks on all files:
+    ```bash
+    pre-commit run --all-files
+    ```
+    To run Ruff specifically:
+    ```bash
+    ruff check . --fix
+    ```
 
-The `docker-compose.yml` file defines and configures the multi-container Docker application. When you run `docker-compose up`, it orchestrates the creation of the following services:
+### Database Migrations
+We use `Alembic` to manage database schema migrations.
 
-*   **`db`**:
-    *   **What it is**: A PostgreSQL database container.
-    *   **Image**: Uses the official `postgres:14-alpine` image.
-    *   **Persistence**: It uses a named volume called `postgres_data` to ensure that your database's data persists even if the container is removed and recreated.
-    *   **Configuration**: It's configured using environment variables from your `.env` file for the database name, user, and password.
+*   **Note**: If you are setting up the project for the first time, you may need to initialize Alembic.
 
-*   **`redis`**:
-    *   **What it is**: A Redis in-memory data store.
-    *   **Image**: Uses the official `redis:7-alpine` image.
-    *   **Purpose**: It serves as the message queue for communication between the API server and the log worker, and can also be used for caching.
+1.  **Create a new migration:**
+    When you make changes to your SQLAlchemy models, you'll need to generate a new migration script:
+    ```bash
+    alembic revision --autogenerate -m "A descriptive message for your migration"
+    ```
 
-*   **`api_server`**:
-    *   **What it is**: The main web application that handles incoming API requests.
-    *   **Build**: It's built from the local `Dockerfile` using a specific multi-stage build target named `api_server`.
-    *   **Dependencies**: It's configured to start only after the `db` and `redis` services are running.
-    *   **Scaling**: The `deploy: replicas: 3` key suggests that the system is designed to run three instances of the API server for handling more traffic, which would be orchestrated by the `nginx_load_balancer`.
+2.  **Apply migrations:**
+    To apply all pending migrations to your database:
+    ```bash
+    alembic upgrade head
+    ```
 
-*   **`log_worker`**:
-    *   **What it is**: The background worker that consumes messages from the Redis queue.
-    *   **Build**: It's also built from the local `Dockerfile`, but it uses the `log_worker` build target.
-    *   **Dependencies**: It also depends on the `db` and `redis` services.
-    *   **Scaling**: It's configured to run two instances, allowing for parallel processing of background jobs.
+## Configuration
+The application is configured using environment variables. Create a `.env` file in the project root (you can copy `.env.example`) and fill in the following values:
 
-*   **`nginx_load_balancer`**:
-    *   **What it is**: An Nginx web server that acts as a reverse proxy and load balancer.
-    *   **Function**: It's the public entry point to the application. It listens on port 80 and distributes incoming HTTP requests across the three `api_server` instances.
-    *   **Configuration**: Its behavior is defined by the `nginx/nginx.conf` file, which is mounted into the container.
+| Variable                  | Description                                                              | Example                               |
+| ------------------------- | ------------------------------------------------------------------------ | ------------------------------------- |
+| `LOG_LEVEL`               | The logging level for the application.                                   | `INFO`                                |
+| `POSTGRES_HOST`           | The hostname of the PostgreSQL database or PgBouncer.                    | `pgbouncer`                           |
+| `POSTGRES_PORT`           | The port of the PostgreSQL database or PgBouncer.                        | `6432`                                |
+| `POSTGRES_USER`           | The username for the PostgreSQL database.                                | `user`                                |
+| `POSTGRES_PASSWORD`       | The password for the PostgreSQL database.                                | `password`                            |
+| `POSTGRES_DB`             | The name of the PostgreSQL database.                                     | `kurt`                                |
+| `REDIS_HOST`              | The hostname of the Redis server.                                        | `redis`                               |
+| `REDIS_PORT`              | The port of the Redis server.                                            | `6379`                                |
+| `REDIS_DB`                | The Redis database number to use for the cache.                          | `0`                                   |
+| `REDIS_MESSAGE_QUEUE_DB`  | The Redis database number to use for the message queue.                  | `1`                                   |
+| `API_REPLICAS`            | The number of API server instances to run.                               | `5`                                   |
+| `WORKER_REPLICAS`         | The number of log worker instances to run.                               | `3`                                   |
 
-In summary, this `docker-compose` setup creates a complete, isolated environment for your application that mirrors a production setup, with a database, a message queue, a scalable API, scalable background workers, and a load balancer.
+## Docker Compose Explained
+The `docker-compose.yml` file orchestrates the different services of the application:
 
-### Manual Setup
+*   **`nginx`**: The reverse proxy and load balancer. It distributes incoming traffic across the `api_server` replicas.
+*   **`api_server`**: The FastAPI application that handles user requests. It is configured to scale to multiple replicas.
+*   **`log_worker`**: The background worker that processes asynchronous tasks from the message queue.
+*   **`postgres`**: The PostgreSQL database service.
+*   **`pgbouncer`**: A connection pooler for PostgreSQL. The `api_server` and `log_worker` connect to the database through PgBouncer to improve performance.
+*   **`redis`**: The Redis server, used for both caching and as a message broker.
 
-#### API Server
+## Local Manual Setup
+If you prefer to run the application locally without Docker, follow these steps:
 
-The API server is the main entry point for user interactions (creating short URLs and redirecting).
+1.  **Install Dependencies**:
+    *   Install PostgreSQL and Redis on your local machine.
+    *   Create a Python virtual environment and install the project dependencies:
+        ```bash
+        python -m venv venv
+        source venv/bin/activate
+        pip install -r requirements.txt
+        ```
 
-To run the server in a development environment:
+2.  **Configure Environment**:
+    *   Create a `.env` file and update the `POSTGRES_HOST`, `POSTGRES_PORT`, `REDIS_HOST`, and `REDIS_PORT` variables to point to your local instances (e.g., `localhost`).
 
-```bash
-poetry run uvicorn api_server.app:app --host 0.0.0.0 --port 8000 --reload
-```
+3.  **Run Migrations**:
+    *   Apply the database migrations to your local PostgreSQL database:
+        ```bash
+        alembic upgrade head
+        ```
 
-#### Log Worker
+4.  **Run the Applications**:
+    *   You will need to run the API server and the log worker in separate terminal windows.
+    *   **Run the API Server**:
+        ```bash
+        uvicorn src.api_server.app:app --host 0.0.0.0 --port 8000
+        ```
+    *   **Run the Log Worker**:
+        ```bash
+        python -m src.log_worker.worker
+        ```
 
-The log worker is a background process that listens for visit events on the message queue and updates the database. It's crucial for this to be running to see visit counts increase.
+## Project Structure
 
-To run the worker:
+The project is organized into the following main directories:
 
-```bash
-poetry run python -m log_worker.worker
-```
-
----
-
-## Deployment Example
-
-For a production environment, it's recommended to use a process manager like `systemd` and a production-grade web server like `gunicorn`.
-
-**Example Gunicorn command for the API server:**
-
-```bash
-poetry run gunicorn api_server.app:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
-```
-- `-w 4`: Specifies 4 worker processes. Adjust based on your server's CPU cores.
-- `-k uvicorn.workers.UvicornWorker`: Uses Uvicorn's worker class to run the ASGI application.
-
-You can create a `systemd` service file to manage both the API server and the log worker, ensuring they restart automatically on failure.
-
----
-
-## Code Style
-
-This project uses the **[Ruff](https://github.com/astral-sh/ruff)** as code formatter and linter to ensure a consistent code style. `ruff` is included as a development dependency, so it will be installed when you run `poetry install`.
-
-All contributions should be formatted with `ruff` before being submitted.
-
-Also ruff is added to pre-commit hooks, So run
-```bash
-poetry run pre-commit install
-```
-To enable pre-commit hooks.
-
-
-### Usage
-
-To format the entire project, run the following command from the root directory:
-
-```bash
-poetry run ruff . --fix
-```
-or
-```bash
-poetry run pre-commit run --all-files
-```
+*   `src/`: Contains the core application code.
+    *   `api_server/`: The FastAPI web application.
+    *   `log_worker/`: The asynchronous background worker.
+    *   `core/`: The core business logic, services, and repositories.
+*   `tests/`: Contains the test suite.
+*   `nginx/`: NGINX configuration files.
+*   `pgbouncer/`: PgBouncer configuration files.
+*   `alembic/`: Alembic database migration scripts.
