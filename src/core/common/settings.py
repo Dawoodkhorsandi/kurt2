@@ -17,6 +17,11 @@ class Settings(BaseSettings):
         description="Maximum number of connections "
         "to allow in addition to the pool size.",
     )
+    use_pgbouncer: bool = Field(
+        False,
+        alias="DB_USE_PGBOUNCER",
+        description="Set to true to use NullPool, recommended when using PgBouncer.",
+    )
     postgres_dsn: PostgresDsn
     cache_type: str = Field(
         "in-memory", description="Cache type can be 'in-memory' or 'redis'"
