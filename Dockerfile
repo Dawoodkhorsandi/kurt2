@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir poetry==2.1.4
 COPY poetry.lock pyproject.toml ./
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommands curl && \
+    apt-get install -y curl && \
     poetry config virtualenvs.create false && \
     poetry install --no-interaction --no-root
 
