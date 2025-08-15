@@ -15,7 +15,11 @@ Base = declarative_base()
 class Database:
     def __init__(self, db_url: str, pool_size: int = 5, max_overflow: int = 10):
         self._engine = create_async_engine(
-            db_url, pool_size=pool_size, max_overflow=max_overflow, echo=False
+            db_url,
+            pool_size=pool_size,
+            max_overflow=max_overflow,
+            echo=False,
+            connect_args={"statement_cache_size": 0},
         )
         session_factory = sessionmaker(
             autocommit=False,
