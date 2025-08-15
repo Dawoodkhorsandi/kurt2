@@ -19,7 +19,7 @@ services:
     ports:
       - "${DB_PORT}:5432"
   pgbouncer:
-    image: bitnami/pgbouncer:1.22
+    image: bitnami/pgbouncer:1.22.0
     ports:
       - "6432:6432"
     environment:
@@ -63,7 +63,6 @@ services:
       --tcp-backlog 511
     sysctls:
       - net.core.somaxconn=511
-      - vm.overcommit_memory=1
   migration:
     build:
       context: .
