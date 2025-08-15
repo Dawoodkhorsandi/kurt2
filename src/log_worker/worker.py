@@ -6,7 +6,6 @@ from typing import List
 from pydantic import ValidationError
 
 from src.core.infrastructures.dependency_injection.app_container import AppContainer
-from src.core.infrastructures.logging import setup_logging
 from src.core.infrastructures.message_queue.abstract_message_queue import (
     AbstractMessageQueue,
 )
@@ -14,12 +13,11 @@ from src.core.shorten.entities.messages import VisitLogMessage
 from src.core.shorten.entities.visits import Visit
 from src.core.shorten.repositories.url_repository import UrlRepository
 from src.core.shorten.repositories.visits_repository import VisitsRepository
-
+from src.core.infrastructures.logging import setup_logging
 BATCH_SIZE = 100
 SLEEP_INTERVAL = 1  # In seconds
 
-logger = logging.getLogger(__name__)
-
+logger= logging.getLogger(__name__)
 
 class LogWorker:
     def __init__(
@@ -86,9 +84,7 @@ class LogWorker:
 
 async def main():
     setup_logging()
-
     container = AppContainer()
-    container.wire(modules=[__name__])
 
     message_queue = container.message_queue()
     url_repository = container.url_repository()

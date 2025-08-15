@@ -1,7 +1,8 @@
 import asyncio
 from functools import wraps
 from src.core.shorten.entities.messages import VisitLogMessage
-
+import logging
+logger = logging.getLogger(__name__)
 
 def cache(func):
     """
@@ -16,8 +17,9 @@ def cache(func):
 
         cached_result = await cache_storage.get(short_code)
         if cached_result:
+            logger.debug('CacheUtil: cache hit', extra={'short_code': short_code})
             return cached_result
-
+        logger.debug('CacheUtil: cache miss', extra={'short_code': short_code})
         result = await func(self, *args, **kwargs)
 
         if result:
@@ -43,14 +45,13 @@ def log_visit(func):
         user_agent = kwargs.get("user_agent")
 
         original_url = await func(self, *args, **kwargs)
-
         if original_url:
             visit_message = VisitLogMessage(
                 short_code=short_code,
                 ip_address=ip_address,
                 user_agent=user_agent,
             )
-
+            logger.debug('Push task on queue', extra={**visit_message.dict()})
             asyncio.create_task(message_queue.publish(visit_message.model_dump_json()))
 
         return original_url

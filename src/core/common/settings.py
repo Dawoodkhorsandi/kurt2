@@ -5,6 +5,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    log_level: str = Field("DEBUG", description="Logging level for the application.")
+    application_name: str = Field("Kurt", description="Name of application used in logs.")
     postgres_dsn: PostgresDsn
     cache_type: str = Field(
         "in-memory", description="Cache type can be 'in-memory' or 'redis'"

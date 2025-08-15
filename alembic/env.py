@@ -15,9 +15,9 @@ config = context.config
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
 
+from src.core.infrastructures.logging import setup_logging
+setup_logging()
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
