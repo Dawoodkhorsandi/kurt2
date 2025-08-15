@@ -92,3 +92,50 @@ Redis is used for both caching and as a message queue.
 ### Redis Cluster for Sharding
 
 If a single Redis node is not enough to handle your caching or messaging load, you can use **Redis Cluster**. Redis Cluster automatically shards your data across multiple Redis nodes. This provides both scalability (more nodes to handle more traffic) and high availability.
+
+---
+
+## 5. Rate Limiting and Throttling
+
+As your application scales and becomes more public, it's crucial to protect it from abuse and ensure fair resource allocation for all users. Rate limiting and throttling are essential for this.
+
+**Why it's Important:**
+*   **Prevent Abuse**: Protects against malicious actors trying to brute-force short codes or overwhelm the service with requests (Denial of Service attacks).
+*   **Ensure Fair Usage**: Prevents a single user or client from consuming a disproportionate amount of server resources, which could degrade performance for others.
+*   **Protect Downstream Services**: Ensures that your API doesn't overload your database or other backend services.
+
+**Implementation Strategies:**
+
+There are two primary places to implement rate limiting:
+
+1.  **At the Edge (API Gateway / Load Balancer):**
+    *   **How**: This is often the best place to start. Tools like NGINX, HAProxy, or your cloud provider's load balancer can enforce rate limits before a request even hits your application.
+    *   **Example (NGINX)**: You can use NGINX's `limit_req_zone` directive to define a request rate limit based on a client's IP address.
+        ```nginx
+        http {
+            limit_req_zone $binary_remote_addr zone=mylimit:10m rate=10r/s;
+            ...
+            server {
+                ...
+                location / {
+                    limit_req zone=mylimit burst=20;
+                    ...
+                }
+            }
+        }
+        ```
+    *   **Pros**: Highly efficient. It blocks excessive traffic at the network edge, saving application resources.
+    *   **Cons**: Less flexible. It's typically based on IP addresses, which might not be granular enough if multiple users are behind the same NAT.
+
+2.  **At the Application Level:**
+    *   **How**: Implement logic directly within your FastAPI application. This allows for much more flexible and sophisticated rules.
+    *   **Tools**: Libraries like `slowapi` integrate seamlessly with FastAPI.
+    *   **Example Use Cases**: 
+        *   Apply different rate limits based on the API endpoint (e.g., stricter limits on URL creation than on redirection).
+        *   Implement user-based rate limits (e.g., authenticated users get higher limits than anonymous users).
+        *   Use more advanced algorithms like the **Token Bucket** strategy for handling bursts of traffic smoothly.
+    *   **Pros**: Maximum flexibility to define rules that fit your business logic.
+    *   **Cons**: Consumes application resources to process requests before rejecting them. It's best used in combination with edge-level limiting.
+
+**Recommended Approach:**
+For a robust system, use a combination of both methods. Implement a general, IP-based rate limit at the NGINX/load balancer level to handle large-scale abuse. Then, add more granular, business-logic-aware rate limits within the FastAPI application itself.
